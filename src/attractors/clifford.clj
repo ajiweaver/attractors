@@ -2,72 +2,151 @@
   (:require [quil.core :as q]
             [quil.middleware :as m]))
 
-;(def a -1.24458046630025)
-;(def b -1.25191834103316)
-;(def c -1.81590817030519)
-;(def d -1.90866735205054)
+;;(def a -1.24458046630025)
+;;(def b -1.25191834103316)
+;;(def c -1.81590817030519)
+;;(def d -1.90866735205054)
+
+;; triangular cradle
 
 ;(def a -1.4)
 ;(def b 1.7)
 ;(def c 1.0)
 ;(def d 0.7)
 
-(def a -1.3)
-(def b 1.72)
-(def c 1.3)
-(def d 0.432)
+;; cradle / basket
 
-(def init_loc {:x 0 :y 0.1})
+;(def a -1.3)
+;(def b 1.72)
+;(def c 1.3)
+;(def d 0.432)
 
-(defn update-x
+;; isolated
+
+;(def a -1.4)
+;(def b -1.7)
+;(def c -1.0)
+;(def d -0.7)
+
+;; bird
+
+;(def a -1.1)
+;(def b 2.72)
+;(def c 1.3)
+;(def d 0.432)
+
+;; 4 dots
+
+;(def a -1.1)
+;(def b 1.72)
+;(def c 0.3)
+;(def d 0.432)
+
+;; whale
+
+;(def a -1.1)
+;(def b 1.72)
+;(def c 2.202)
+;(def d 0.432)
+
+(defn next-x
   "Update the x location"
-  [x y]
-  (+ (Math/sin (* a y))
-     (* c (Math/cos (* a x)))))
+  [{:keys [points a c]}]
+  (let [{:keys [x y]} (first points)]
+    (+ (Math/sin (* a y))
+       (* c (Math/cos (* a x))))))
 
-(defn update-y
+(defn next-y
   "Update the y location"
-  [x y]
-  (+ (Math/sin (* b x))
-     (* d (Math/cos (* b y)))))
+  [{:keys [points b d]}]
+  (let [{:keys [x y]} (first points)]
+    (+ (Math/sin (* b x))
+       (* d (Math/cos (* b y))))))
 
-(defn extend-state [state]
-  (let [{:keys [x y]} (first state)
-        next_x (update-x x y)
-        next_y (update-y x y)]
-    (cons {:x next_x
-           :y next_y}
-          state
-          )))
+(defn next-point [state]
+  (let [next_point {:x (next-x state)
+                    :y (next-y state)}]
+    (-> state
+        (update :points #(cons next_point %)))))
 (comment
-  (cons 1 [1 2 3])
-  (def state [{:x 0 :y 0}])
-  (extend-state state)
-  ; [{:x 0, :y 0} {:x -1.81590817030519, :y -1.90866735205054}]
+  (let [state {:a 1 :b 2 :c 1 :d 1 :points '({:x 0 :y 0})}]
+    (next-point state))
+  (let [points '({:x 1 :y 0})]
+    (println points)
+    (let [{:keys [x y]} (first points)]
+      (println x)
+      (println y))
+    )
   )
 
-(defn gen-state
-  [init_state N]
+
+(defn add-points
+  "Add `N` points to the :points key in `init-state`"
+  [init-state N]
   (loop [counter 0
-         state init_state]
+         state init-state]
     (if (>= counter N)
       state
-      (let [new_state (extend-state state)]
+      (let [new_state (next-point state)]
         (recur (inc counter) new_state)))))
 (comment
   (time (first (take 100000000 (repeat 1))))
   (time (last (take 100000 (repeat 1))))
-  (time (extend-state [init_loc]))
-  (time (gen-state [init_loc] 10000))
-; [{:x 0, :y 0}
-;  {:x -1.81590817030519, :y -1.90866735205054}
-;  {:x 1.8481708102963523, :y 2.157001821533527}
-;  {:x 0.768878037628628, :y 0.9894234289095707}]
+  (time (next-point [(rand-init)]))
+  (let [state {:a 1 :b 2 :c 1 :d 1 :points '({:x 0 :y 0})}]
+    (add-points state 10))
   )
 
 (defn rand-init []
   {:x (rand 0.1)
    :y (rand 0.1)})
+
+(def max-noise 0.001)
+
+(defmacro update-parameter
+  [param]
+  `(assoc ~param (+ (rand max-noise) ~param)))
+
+(defn update-state [{:keys [a b c d] :as state}]
+  ;(if (q/key-pressed?)
+    ;(do
+      ;(println "stopped")
+      ;(q/save-frame "clifford-attractor-#####.jpg")
+      ;(q/no-loop)))
+  (-> state
+      (update-parameter :a)
+      (update-parameter :b)
+      (update-parameter :c)
+      (update-parameter :d)
+      (assoc :points (list (rand-init)))
+      (add-points N)
+      )
+  )
+(comment
+  (let [state {:a 1 :b 2 :c 1 :d 1 :points '({:x 0 :y 0})}]
+    (update-state state))
+  (-> (init-triangular-cradle 10)
+      (assoc :a (+ (rand 0.5) 1.0))
+      (assoc :b (+ (rand 0.5) 1.0))
+      (assoc :c (+ (rand 0.5) 1.0))
+      (assoc :d (+ (rand 0.5) 1.0))
+      )
+  (rand 0.01)
+  )
+
+(defn init-triangular-cradle
+  "Initialize the triangular cradle with N points"
+  [N]
+  (let [state {:a -1.4
+               :b 1.7
+               :c 1.0
+               :d 0.7
+               :points (list (rand-init))}]
+    (add-points state N)))
+(comment
+  (-> (init-triangular-cradle 10)
+      (assoc :a 2))
+  )
 
 (def N 100000)
 (defn setup []
@@ -75,26 +154,17 @@
   (q/background 31)
   (q/frame-rate 15)
   (println "Generating state...")
-  (update-state []))
+  (time (init-triangular-cradle N)))
 
-(defn update-state [state]
-  (if (q/key-pressed?)
-    (do
-      (println "stopped")
-      (q/save-frame "clifford-attractor-#####.jpg")
-      (q/no-loop)))
-  (gen-state [(rand-init)] N))
-
-
-(defn draw-points [state]
+(defn draw-points [{:keys [points]}]
   (q/stroke 202 10)
-  ;(q/background 31)
-  (doseq [{:keys [x y]} state]
+  (q/background 31)
+  (doseq [{:keys [x y]} points]
     ; Move origin point to the center of the sketch.
     (q/with-translation [(/ (q/width) 2)
                          (/ (q/height) 2)]
       ; Draw the next point
-      (let [scale (/ (q/width) 6)]
+      (let [scale (/ (q/height) 4.1)]
         (q/point (* scale x) (* scale y))))))
 (comment
   (and false true true true)
@@ -105,36 +175,16 @@
   (range 1 (count aa)) ; (1 2)
   )
 
-;(defn draw-lines [state]
-  ;(q/text (str "display density: " (q/display-density)) 10 20)
-  ;(doseq [ii (range 1 (count state))]
-    ;(let [previous (nth state (dec ii))
-          ;current (nth state ii)]
-     ;; Move origin point to the center of the sketch.
-     ;(q/with-translation [(/ (q/width) 2)
-                          ;(/ (q/height) 2)]
-       ;; Draw the next point
-       ;(let [scale (/ (q/width) 7)
-             ;{x1 :x y1 :y} previous
-             ;{x2 :x y2 :y} current]
-         ;(q/line (* scale x1) (* scale y1)
-                  ;(* scale x2) (* scale y2))))))
-  ;(q/no-loop))
-
-(comment
-  (def aa (gen-state [init_loc] 10))
-  )
-
 (q/defsketch attractors
   :title "Clifford attractor"
-  :size [1600 1000]
+  :size [1900 1200]
   ; setup function called only once, during sketch initialization.
   :setup setup
   ; update-state is called on each iteration before draw-state.
   :update update-state
   :draw draw-points
   ;:draw draw-lines
-  :features [:keep-on-top]
+  ;:features [:keep-on-top]
   ; This sketch uses functional-mode middleware.
   ; Check quil wiki for more info about middlewares and particularly
   ; fun-mode.

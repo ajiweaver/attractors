@@ -77,6 +77,7 @@
       (println x)
       (println y))
     )
+  (time (first (take 1e9 (repeat 1))))
   )
 
 
@@ -104,8 +105,8 @@
 (def max-noise 0.001)
 
 (defmacro update-parameter
-  [param]
-  `(assoc ~param (+ (rand max-noise) ~param)))
+  [mm param previous]
+  `(assoc ~mm ~param (+ (rand max-noise) ~previous)))
 
 (defn update-state [{:keys [a b c d] :as state}]
   ;(if (q/key-pressed?)
@@ -114,17 +115,23 @@
       ;(q/save-frame "clifford-attractor-#####.jpg")
       ;(q/no-loop)))
   (-> state
-      (update-parameter :a)
-      (update-parameter :b)
-      (update-parameter :c)
-      (update-parameter :d)
+      (update-parameter :a a)
+      (update-parameter :b b)
+      (update-parameter :c c)
+      (update-parameter :d d)
+      ;(assoc :a (+ a (rand max-noise)))
+      ;(assoc :b (+ b (rand max-noise)))
+      ;(assoc :c (+ c (rand max-noise)))
+      ;(assoc :d (+ d (rand max-noise)))
       (assoc :points (list (rand-init)))
       (add-points N)
       )
   )
 (comment
   (let [state {:a 1 :b 2 :c 1 :d 1 :points '({:x 0 :y 0})}]
-    (update-state state))
+    ;(update-state state)
+    (update-parameter state :a 1)
+    )
   (-> (init-triangular-cradle 10)
       (assoc :a (+ (rand 0.5) 1.0))
       (assoc :b (+ (rand 0.5) 1.0))
@@ -145,10 +152,11 @@
     (add-points state N)))
 (comment
   (-> (init-triangular-cradle 10)
-      (assoc :a 2))
+      (assoc :a 2)
+      (update-parameter :b))
   )
 
-(def N 100000)
+(def N 3500000)
 (defn setup []
   (q/color-mode :hsb)
   (q/background 31)
@@ -156,16 +164,22 @@
   (println "Generating state...")
   (time (init-triangular-cradle N)))
 
-(defn draw-points [{:keys [points]}]
+(defn draw-points [{:keys [a b c d points]}]
+  (println a)
+  (println b)
+  (println c)
+  (println d)
+  (println "------------")
   (q/stroke 202 10)
   (q/background 31)
   (doseq [{:keys [x y]} points]
     ; Move origin point to the center of the sketch.
-    (q/with-translation [(/ (q/width) 2)
+    (q/with-translation [(- (/ (q/width) 2) 80)
                          (/ (q/height) 2)]
       ; Draw the next point
       (let [scale (/ (q/height) 4.1)]
-        (q/point (* scale x) (* scale y))))))
+        (q/point (* scale x) (* scale y)))))
+  (q/save-frame "animated-clifford-attractor-######.jpg"))
 (comment
   (and false true true true)
   (range 2 4)
@@ -177,7 +191,7 @@
 
 (q/defsketch attractors
   :title "Clifford attractor"
-  :size [1900 1200]
+  :size [1500 1200]
   ; setup function called only once, during sketch initialization.
   :setup setup
   ; update-state is called on each iteration before draw-state.

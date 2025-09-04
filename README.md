@@ -1,12 +1,10 @@
 # attractors
 
-A Quil sketch designed to ... well, that part is up to you.
+A Quil sketch designed to plot attractors.
 
 ## Usage
 
 LightTable - open `core.clj` and press `Ctrl+Shift+Enter` to evaluate the file.
-
-Emacs - run cider, open `core.clj` and press `C-c C-k` to evaluate the file.
 
 REPL - run `(require 'attractors.core)`.
 

@@ -103,10 +103,13 @@
    :y (rand 0.1)})
 
 (def max-noise 0.001)
+;(def max-noise 0.02)
 
 (defmacro update-parameter
   [mm param previous]
   `(assoc ~mm ~param (+ (rand max-noise) ~previous)))
+  ;`(assoc ~mm ~param (-  ~previous (rand max-noise))))
+  ;`(assoc ~mm ~param (+ (- (rand max-noise) (/ max-noise 2)) ~previous)))
 
 (defn update-state [{:keys [a b c d] :as state}]
   ;(if (q/key-pressed?)
@@ -119,10 +122,6 @@
       (update-parameter :b b)
       (update-parameter :c c)
       (update-parameter :d d)
-      ;(assoc :a (+ a (rand max-noise)))
-      ;(assoc :b (+ b (rand max-noise)))
-      ;(assoc :c (+ c (rand max-noise)))
-      ;(assoc :d (+ d (rand max-noise)))
       (assoc :points (list (rand-init)))
       (add-points N)
       )
@@ -156,7 +155,8 @@
       (update-parameter :b))
   )
 
-(def N 3500000)
+;(def N 3500000)
+(def N 35000)
 (defn setup []
   (q/color-mode :hsb)
   (q/background 31)
@@ -170,7 +170,8 @@
   (println c)
   (println d)
   (println "------------")
-  (q/stroke 202 10)
+  ;(q/stroke 202 10)
+  (q/stroke 202 80)
   (q/background 31)
   (doseq [{:keys [x y]} points]
     ; Move origin point to the center of the sketch.
